@@ -81,17 +81,45 @@ print(result["seedance_prompts"])
 
 ## 🌐 部署到云端
 
-### Coze平台部署
+### Coze平台一键部署
 
+**推荐使用快速部署指南（5分钟完成）**
+
+👉 [点击查看：QUICK_DEPLOY.md](QUICK_DEPLOY.md)
+
+**简版流程：**
 ```bash
-# 1. 运行部署前检查
-bash pre_deploy_check.sh
+# 1. 推送代码到GitHub/GitLab/Gitee
+git remote add origin https://github.com/YOUR_USERNAME/ai-storyboard-workflow.git
+git branch -M main
+git push -u origin main
 
-# 2. 在Coze平台创建应用并关联Git仓库
-# 3. 配置部署参数并触发部署
+# 2. 在Coze平台创建工作流应用
+# 3. 关联Git仓库
+# 4. 配置部署参数：
+#    - 构建命令：bash scripts/setup.sh
+#    - 运行命令：bash scripts/http_run.sh -p 5000
+# 5. 触发部署
 ```
 
-详细部署步骤请查看 [COZE_DEPLOY.md](COZE_DEPLOY.md)
+### 自动化部署脚本
+
+```bash
+# 运行完整的自动化部署流程（交互式）
+bash auto_deploy.sh
+```
+
+### 部署前检查
+
+```bash
+# 检查部署环境
+bash pre_deploy_check.sh
+```
+
+**详细文档：**
+- 🚀 [快速部署指南](QUICK_DEPLOY.md) - 5分钟完成部署
+- 📚 [完整部署文档](COZE_DEPLOY.md) - 详细的步骤说明
+- 🧪 [测试脚本](test_workflow.sh) - 部署后验证
 
 ### 上传到GitHub
 
