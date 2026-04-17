@@ -31,6 +31,11 @@ def health():
         'service': 'AI Storyboard Proxy'
     }), 200
 
+@app.route('/run', methods=['POST'])
+def run():
+    """生成接口（别名，兼容旧版）"""
+    return generate_storyboard()
+
 @app.route('/api/v1/generate', methods=['POST'])
 def generate_storyboard():
     """
