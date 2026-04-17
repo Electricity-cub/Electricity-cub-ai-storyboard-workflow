@@ -75,6 +75,7 @@ def generate_storyboard():
             }), 500
 
         logger.info(f"收到请求: episode={input_data.get('episode_number')}, style={input_data.get('visual_style')}")
+        logger.info("开始调用Coze API，这可能需要较长时间（多个LLM节点串行执行）...")
 
         # 构造Coze API请求
         headers = {
@@ -82,13 +83,25 @@ def generate_storyboard():
             'Content-Type': 'application/json'
         }
 
-        # 调用Coze API
-        response = requests.post(
-            COZE_API_URL,
-            json=input_data,  # 直接传递input_data，不包装在input对象中
-            headers=headers,
-            timeout=300  # 5分钟超时
-        )
+        try:
+            # 调用Coze API
+            # 增加超时时间到600秒（10分钟），因为工作流包含多个LLM节点
+            response = requests.post(
+                COZE_API_URL,
+                json=input_data,  # 直接传递input_data，不包装在input对象中
+                headers=headers,
+                timeout=(60, 600)  # (连接超时, 读取超时)
+            )
+        except requests.exceptions.Timeout:
+            logger.error("Coze API请求超时（超过10分钟）")
+            return jsonify({
+                'error': '请求超时，工作流执行时间过长。请尝试简化剧本内容或稍后重试。'
+            }), 504
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Coze API请求异常: {str(e)}")
+            return jsonify({
+                'error': f'请求失败: {str(e)}'
+            }), 500
 
         # 检查响应状态
         if response.status_code == 200:

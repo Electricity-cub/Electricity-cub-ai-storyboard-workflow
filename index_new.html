@@ -276,7 +276,11 @@
         </button>
 
         <div class="loading" id="loading">
-            ⏳ 正在生成分镜，请稍候...
+            <div style="font-size: 1.2em; margin-bottom: 10px;">⏳ 正在生成分镜，请稍候...</div>
+            <div style="font-size: 0.9em; color: #666;">
+                提示：工作流包含多个AI处理步骤（导演讲戏、人物设计、场景设计、分镜头脚本、视频提示词）<br>
+                复杂剧本可能需要较长时间，最长可达15分钟，请耐心等待...
+            </div>
         </div>
 
         <div id="result">
@@ -313,6 +317,12 @@
             loading.style.display = 'block';
             result.style.display = 'none';
 
+            // 创建超时控制器（15分钟超时）
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => {
+                controller.abort();
+            }, 15 * 60 * 1000); // 15分钟
+
             try {
                 // 调用后端API
                 const response = await fetch(BACKEND_API_URL, {
@@ -322,8 +332,12 @@
                     },
                     body: JSON.stringify({
                         input: data
-                    })
+                    }),
+                    signal: controller.signal
                 });
+
+                // 清除超时计时器
+                clearTimeout(timeoutId);
 
                 const responseData = await response.json();
 
@@ -353,14 +367,28 @@
                     if (responseData?.error && responseData.error.includes('API Token未配置')) {
                         alert('后端API Token未配置！\n\n请打开 backend/app.py 文件，找到第22行，将"你的Coze_API_Token"替换成你实际的Coze API Token。\n\n然后重启后端服务。');
                     }
+
+                    // 如果是超时错误，给出提示
+                    if (response.status === 504 || (responseData?.error && responseData.error.includes('超时'))) {
+                        alert('请求超时！\n\n工作流执行时间过长，可能是因为：\n1. 剧本内容过长\n2. 网络连接不稳定\n\n建议：\n- 尝试简化剧本内容\n- 稍后重试\n- 检查网络连接');
+                    }
                 }
 
             } catch (error) {
+                // 清除超时计时器
+                clearTimeout(timeoutId);
+
                 loading.style.display = 'none';
                 btn.disabled = false;
                 result.className = 'result error';
                 result.style.display = 'block';
-                resultContent.textContent = '调用失败：' + error.message;
+
+                // 判断错误类型
+                if (error.name === 'AbortError') {
+                    resultContent.textContent = '请求超时！\n\n工作流执行时间超过15分钟。\n\n建议：\n1. 尝试简化剧本内容\n2. 稍后重试\n3. 检查网络连接\n\n处理复杂剧本需要较长时间，请耐心等待...';
+                } else {
+                    resultContent.textContent = '调用失败：' + error.message;
+                }
 
                 // 如果是连接失败，提示启动后端服务
                 if (error.message.includes('Failed to fetch')) {
