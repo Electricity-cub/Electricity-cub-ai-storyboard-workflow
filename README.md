@@ -201,6 +201,32 @@ curl -X POST http://localhost:5000/run \
 
 ## 🌐 云端部署
 
+### 推荐使用方式
+
+**方式1：异步版本（推荐，无超时问题）**
+
+打开 `index_async.html` 文件，使用异步任务处理，完全解决超时问题。
+
+**方式2：同步版本（兼容，可能超时）**
+
+打开 `index_new.html` 文件，使用传统的同步请求方式。
+
+**说明：**
+- 异步版本支持实时进度显示，无超时限制
+- 同步版本有20分钟超时限制，复杂剧本可能超时
+- 详细说明请参考 [ASYNC_SOLUTION.md](ASYNC_SOLUTION.md)
+
+### 一键启动
+
+```bash
+# 启动后端服务
+cd backend && python3 app.py
+
+# 在浏览器中打开
+# index_async.html（推荐）
+# 或 index_new.html（兼容）
+```
+
 ### Vercel部署（推荐）
 
 详细步骤请查看 [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)

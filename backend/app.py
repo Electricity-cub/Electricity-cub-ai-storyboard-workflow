@@ -8,6 +8,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import requests
 import logging
+from task_manager import create_task, get_task_status, cleanup_old_tasks
 
 # 配置日志
 logging.basicConfig(
@@ -26,10 +27,79 @@ COZE_API_TOKEN = "eyJhbGciOiJSUzI1NiIsImtpZCI6ImNhMmE2OTQyLTU3N2EtNDUxYi1hOWYyLW
 @app.route('/health', methods=['GET'])
 def health():
     """健康检查接口"""
+    # 定期清理旧任务
+    cleanup_count = cleanup_old_tasks()
+    if cleanup_count > 0:
+        logger.info(f"清理了 {cleanup_count} 个旧任务")
+
     return jsonify({
         'status': 'healthy',
-        'service': 'AI Storyboard Proxy'
+        'service': 'AI Storyboard Proxy',
+        'active_tasks': len([t for t in globals().get('tasks', {}).values() if t.status == 'running'])
     }), 200
+
+# ==================== 异步API接口 ====================
+
+@app.route('/api/v1/tasks', methods=['POST'])
+def create_async_task():
+    """
+    创建异步任务（推荐用于长时间工作流）
+    返回任务ID，可以轮询任务状态
+    """
+    try:
+        data = request.json
+        if not data:
+            return jsonify({'error': '请求体不能为空'}), 400
+
+        # 支持两种格式
+        if 'input' in data:
+            input_data = data['input']
+        else:
+            input_data = data
+
+        # 验证剧本内容
+        if not input_data.get('script_content'):
+            return jsonify({'error': '剧本内容不能为空'}), 400
+
+        # 验证Token
+        if COZE_API_TOKEN == "你的Coze_API_Token" or not COZE_API_TOKEN:
+            return jsonify({'error': 'API Token未配置'}), 500
+
+        logger.info(f"创建异步任务: episode={input_data.get('episode_number')}, style={input_data.get('visual_style')}")
+
+        # 创建异步任务
+        task_id = create_task(COZE_API_URL, COZE_API_TOKEN, input_data)
+
+        return jsonify({
+            'task_id': task_id,
+            'status': 'pending',
+            'message': '任务已创建，正在后台执行。使用 task_id 查询任务状态。',
+            'query_url': f'/api/v1/tasks/{task_id}'
+        }), 201
+
+    except Exception as e:
+        logger.error(f"创建任务失败: {str(e)}")
+        return jsonify({'error': f'创建任务失败: {str(e)}'}), 500
+
+
+@app.route('/api/v1/tasks/<task_id>', methods=['GET'])
+def get_task(task_id: str):
+    """
+    查询任务状态
+    """
+    try:
+        task = get_task_status(task_id)
+
+        if task is None:
+            return jsonify({'error': '任务不存在'}), 404
+
+        return jsonify(task), 200
+
+    except Exception as e:
+        logger.error(f"查询任务失败: {str(e)}")
+        return jsonify({'error': f'查询任务失败: {str(e)}'}), 500
+
+# ==================== 同步API接口（原有） ====================
 
 @app.route('/run', methods=['POST'])
 def run():
@@ -85,17 +155,20 @@ def generate_storyboard():
 
         try:
             # 调用Coze API
-            # 增加超时时间到600秒（10分钟），因为工作流包含多个LLM节点
+            # 增加超时时间到1200秒（20分钟），因为工作流包含多个LLM节点
+            # 每个LLM节点可能需要1-3分钟，5个节点串行执行可能需要5-15分钟
+            logger.info("超时设置: 连接60秒, 读取1200秒（20分钟）")
             response = requests.post(
                 COZE_API_URL,
                 json=input_data,  # 直接传递input_data，不包装在input对象中
                 headers=headers,
-                timeout=(60, 600)  # (连接超时, 读取超时)
+                timeout=(60, 1200)  # (连接超时, 读取超时)
             )
+            logger.info(f"Coze API响应状态: {response.status_code}")
         except requests.exceptions.Timeout:
-            logger.error("Coze API请求超时（超过10分钟）")
+            logger.error("Coze API请求超时（超过20分钟）")
             return jsonify({
-                'error': '请求超时，工作流执行时间过长。请尝试简化剧本内容或稍后重试。'
+                'error': '请求超时，工作流执行时间超过20分钟。这可能是因为：\n1. 剧本内容过长\n2. 网络连接不稳定\n3. Coze服务繁忙\n\n建议：\n- 尝试简化剧本内容（<300字，<5个场景）\n- 稍后重试\n- 检查网络连接'
             }), 504
         except requests.exceptions.RequestException as e:
             logger.error(f"Coze API请求异常: {str(e)}")
