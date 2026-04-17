@@ -46,17 +46,23 @@ def generate_storyboard():
         data = request.json
 
         # 验证必填字段
-        if not data or 'input' not in data:
-            logger.error("请求缺少input字段")
+        if not data:
+            logger.error("请求体为空")
             return jsonify({
-                'error': '缺少input字段'
+                'error': '请求体不能为空'
             }), 400
 
-        input_data = data['input']
+        # 支持两种格式：
+        # 格式1: {"input": {...}}
+        # 格式2: 直接 {...}
+        if 'input' in data:
+            input_data = data['input']
+        else:
+            input_data = data
 
         # 验证剧本内容
         if not input_data.get('script_content'):
-            logger.error("剧本内容为空")
+            logger.error(f"剧本内容为空, input_data={input_data}")
             return jsonify({
                 'error': '剧本内容不能为空'
             }), 400

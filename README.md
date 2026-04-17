@@ -123,6 +123,73 @@ python app.py
 2. 输入剧本内容
 3. 点击"生成分镜"
 
+## 🧪 测试验证
+
+### 后端健康检查
+
+```bash
+# 检查后端是否正常运行
+curl http://localhost:5000/health
+# 预期返回: {"status": "ok"}
+```
+
+### API接口测试
+
+```bash
+# 测试生成接口（格式1：包装格式）
+curl -X POST http://localhost:5000/run \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input": {
+      "script_content": "测试剧本",
+      "episode_number": "ep01",
+      "visual_style": "写实",
+      "project_type": "国内短剧"
+    }
+  }'
+
+# 测试生成接口（格式2：直接格式）
+curl -X POST http://localhost:5000/run \
+  -H "Content-Type: application/json" \
+  -d '{
+    "script_content": "测试剧本",
+    "episode_number": "ep01",
+    "visual_style": "写实",
+    "project_type": "国内短剧"
+  }'
+```
+
+### 常见问题解决
+
+#### ❌ 问题：400 BAD REQUEST ✅ 已修复
+**原因**：请求格式不符合要求
+**解决**：
+- 后端现已支持两种格式（包装格式和直接格式）
+- 确保包含必填字段：`script_content`
+- 详细测试说明请参考 [TEST_GUIDE.md](TEST_GUIDE.md)
+
+#### ❌ 问题：Failed to fetch (CORS错误)
+**原因**：前端直接调用Coze API被浏览器阻止
+**解决**：
+- 使用 `index_new.html`（新版前端）而非 `index_cozeweb.html`
+- 确保后端服务正在运行：`cd backend && python3 app.py`
+
+#### ❌ 问题：API Token未配置
+**原因**：`backend/app.py` 中的 `COZE_API_TOKEN` 未设置
+**解决**：
+1. 获取Coze API Token（参考 [HOW_TO_FIND_API_URL.md](HOW_TO_FIND_API_URL.md)）
+2. 在 `backend/app.py` 中设置：`COZE_API_TOKEN = "你的Token"`
+3. 重启后端服务
+
+#### ❌ 问题：API地址404
+**原因**：Coze工作流API地址不正确
+**解决**：
+1. 获取正确的Coze工作流运行地址（参考 [HOW_TO_FIND_API_URL.md](HOW_TO_FIND_API_URL.md)）
+2. 在 `backend/app.py` 中更新：`COZE_API_URL = "https://xxx.coze.site/run"`
+3. 重启后端服务
+
+更多测试细节和API文档请参考 [TEST_GUIDE.md](TEST_GUIDE.md)
+
 ## 🌐 云端部署
 
 ### Vercel部署（推荐）
