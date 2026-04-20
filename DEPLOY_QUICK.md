@@ -111,9 +111,9 @@ https://ai-storyboard-api.onrender.com/run
 
 修改前端页面中的API地址：
 
-### 修改 index_async.html（异步版本）
+### 修改 index.html（异步版本，推荐）
 
-找到这一行（约第300行）：
+找到这一行（约第255行）：
 ```javascript
 const BACKEND_API_URL = 'http://localhost:5000/api/v1/tasks';
 ```
@@ -123,7 +123,7 @@ const BACKEND_API_URL = 'http://localhost:5000/api/v1/tasks';
 const BACKEND_API_URL = 'https://ai-storyboard-api.onrender.com/api/v1/tasks';
 ```
 
-### 修改 index_new.html（同步版本）
+### 修改 index_new.html（同步版本，备用）
 
 找到这一行（约第280行）：
 ```javascript
@@ -157,7 +157,7 @@ https://ai-storyboard-api.onrender.com/health
 
 ### 测试2：使用前端
 
-1. 在浏览器中打开 `index_async.html`
+1. 在浏览器中打开 `index.html`（异步版本，推荐）
 2. 输入剧本内容：
    ```
    小明和小红在公园相遇，一见钟情。
@@ -180,15 +180,15 @@ https://ai-storyboard-api.onrender.com/health
 
 ### 前端页面
 
-- **异步版本：** index_async.html（推荐）
-- **同步版本：** index_new.html（兼容）
+- **异步版本：** index.html（推荐）✅
+- **同步版本：** index_new.html（备用）
 
 ### 使用方法
 
-1. 打开前端页面
+1. 打开 `index.html`（异步版本，推荐）
 2. 输入剧本内容
 3. 点击"生成分镜"
-4. 查看结果
+4. 查看实时进度和结果
 
 ---
 

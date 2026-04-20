@@ -13,7 +13,8 @@
 - 🎨 **场景设计**：按镜头设置生成场景提示词
 - 📋 **分镜头脚本**：运用电影语法设计镜头序列
 - 🎥 **视频提示词**：转化为Seedance 2.0镜头指令
-- 🚀 **并行处理**：人物、场景、分镜头脚本并行执行
+- 🚀 **异步处理**：后台执行任务，无超时限制 ⭐ 推荐
+- 📊 **实时进度**：显示任务状态和进度条
 - 🌐 **完整部署**：包含前端、后端、云端部署方案
 
 ## 🏗️ 系统架构
@@ -47,10 +48,10 @@
 ai-storyboard-workflow/
 ├── backend/                    # 后端服务
 │   ├── app.py                 # Flask应用（解决CORS）
+│   ├── task_manager.py        # 异步任务管理器
 │   ├── requirements.txt       # Python依赖
 │   ├── start.sh              # 启动脚本
-│   ├── README.md             # 后端文档
-│   └── venv/                 # 虚拟环境
+│   └── README.md             # 后端文档
 ├── src/                       # LangGraph工作流
 │   ├── graphs/               # 图编排
 │   │   ├── graph.py         # 主图
@@ -67,37 +68,48 @@ ai-storyboard-workflow/
 │   ├── USAGE.md             # 使用指南
 │   ├── COZE_DEPLOY.md       # Coze部署指南
 │   └── QUICK_DEPLOY.md      # 快速部署指南
-├── index_new.html            # 新版前端（使用后端服务）✅ 推荐
-├── index_cozeweb.html        # 旧版前端（直接调用Coze，有CORS问题）
+├── index.html                # 异步版本前端（推荐）✅
+├── index_new.html            # 同步版本前端（备用）
+├── index_cozeweb.html        # 旧版前端
 ├── start_all.sh             # 一键启动脚本
 ├── DEPLOYMENT_GUIDE.md      # 完整部署指南
+├── DEPLOY_ONLINE.md         # 线上部署指南
+├── DEPLOY_QUICK.md          # 快速部署指南
 ├── README.md                # 本文件
+├── render.yaml              # Render部署配置
+├── Procfile                 # Render启动配置
+├── requirements.txt         # Python依赖
 └── pyproject.toml           # 项目配置
 ```
 
 ## 🚀 快速开始
 
-### 方式1：一键启动（推荐）
+### 一键启动（推荐）
 
 ```bash
 # 在项目根目录运行
-./start_all.sh
-```
-
-### 方式2：分步启动
-
-#### 1. 启动后端服务
-
-```bash
 cd backend
-./start.sh
+python3 app.py
+
+# 在浏览器中打开
+# index.html（异步版本，推荐）
 ```
 
-#### 2. 打开前端页面
+### 推荐使用：异步版本 ✅
 
-在浏览器中打开 `index_new.html` 文件
+**打开 `index.html`（异步版本）**
 
-### 方式3：手动配置
+异步版本特点：
+- 🎯 **无超时限制** - 任务在后台执行，HTTP立即返回
+- 📊 **实时进度** - 显示进度条、状态、耗时等信息
+- 🔄 **可恢复** - 通过task_id查询历史任务
+- 🚀 **高并发** - 支持多任务同时执行
+
+**同步版本（index_new.html）**
+
+同步版本保留作为备用，但推荐使用异步版本。
+
+### 手动配置
 
 #### 步骤1：配置API Token
 

@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI分镜师 - 异步版本</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        textarea, input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus, input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 30px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 15px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .result {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+        }
+
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+        }
+
+        .result pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-running { background: #cce5ff; color: #004085; }
+        .status-completed { background: #d4edda; color: #155724; }
+        .status-failed { background: #f8d7da; color: #721c24; }
+
+        .task-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 AI分镜师</h1>
+        <p class="subtitle">智能分镜生成系统 - 异步版本（推荐）</p>
+
+        <div class="form-group">
+            <label for="scriptContent">
+                <span class="icon">📝</span>剧本内容
+            </label>
+            <textarea id="scriptContent" placeholder="请输入剧本内容，建议< 300字，< 5个场景">小明和小红在公园相遇，一见钟情。他们开始聊天，发现彼此有很多共同点。</textarea>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="episodeNumber">
+                    <span class="icon">🎞️</span>集数
+                </label>
+                <input type="text" id="episodeNumber" value="ep01" placeholder="例如：ep01">
+            </div>
+
+            <div class="form-group">
+                <label for="visualStyle">
+                    <span class="icon">🎨</span>视觉风格
+                </label>
+                <select id="visualStyle">
+                    <option value="写实">写实</option>
+                    <option value="动漫">动漫</option>
+                    <option value="国风">国风</option>
+                    <option value="科幻">科幻</option>
+                    <option value="水墨">水墨</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="projectType">
+                    <span class="icon">🎬</span>项目类型
+                </label>
+                <select id="projectType">
+                    <option value="国内短剧">国内短剧</option>
+                    <option value="电影">电影</option>
+                    <option value="动画">动画</option>
+                    <option value="广告">广告</option>
+                </select>
+            </div>
+        </div>
+
+        <button id="generateBtn" onclick="generateStoryboardAsync()">
+            🚀 生成分镜（异步）
+        </button>
+
+        <div class="loading" id="loading">
+            <div style="font-size: 1.2em; margin-bottom: 15px;">
+                <span id="statusIcon">⏳</span>
+                <span id="statusText">正在创建任务...</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressBar"></div>
+            </div>
+            <div style="font-size: 0.9em; color: #666; margin-top: 10px;">
+                <div>任务ID: <span id="taskId">-</span></div>
+                <div>状态: <span id="taskStatus">-</span></div>
+                <div>耗时: <span id="taskDuration">-</span></div>
+            </div>
+        </div>
+
+        <div class="result" id="result">
+            <h3 style="margin-bottom: 10px;">生成结果</h3>
+            <pre id="resultContent"></pre>
+        </div>
+    </div>
+
+    <script>
+        const BACKEND_API_URL = 'http://localhost:5000/api/v1/tasks';
+        const POLL_INTERVAL = 2000; // 2秒轮询一次
+        const MAX_POLL_TIME = 20 * 60 * 1000; // 最多轮询20分钟
+
+        let currentTaskId = null;
+        let pollTimer = null;
+        let startTime = null;
+
+        async function generateStoryboardAsync() {
+            const btn = document.getElementById('generateBtn');
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            const resultContent = document.getElementById('resultContent');
+
+            // 获取表单数据
+            const data = {
+                script_content: document.getElementById('scriptContent').value.trim(),
+                episode_number: document.getElementById('episodeNumber').value.trim(),
+                visual_style: document.getElementById('visualStyle').value,
+                project_type: document.getElementById('projectType').value
+            };
+
+            // 验证输入
+            if (!data.script_content) {
+                alert('请输入剧本内容');
+                return;
+            }
+
+            // 简化剧本建议
+            if (data.script_content.length > 300) {
+                const confirm = window.confirm(
+                    '剧本内容较长（' + data.script_content.length + '字），建议简化到300字以内以提高成功率。\n\n是否继续？'
+                );
+                if (!confirm) return;
+            }
+
+            // 重置状态
+            if (pollTimer) {
+                clearInterval(pollTimer);
+                pollTimer = null;
+            }
+
+            // 显示加载状态
+            btn.disabled = true;
+            loading.style.display = 'block';
+            result.style.display = 'none';
+
+            updateProgress('pending', '正在创建任务...', 10);
+
+            try {
+                // 创建异步任务
+                const createResponse = await fetch(BACKEND_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        input: data
+                    })
+                });
+
+                const createData = await createResponse.json();
+
+                if (!createResponse.ok) {
+                    throw new Error(createData.error || '创建任务失败');
+                }
+
+                // 开始轮询任务状态
+                currentTaskId = createData.task_id;
+                document.getElementById('taskId').textContent = currentTaskId.substring(0, 8) + '...';
+
+                startTime = Date.now();
+                pollTaskStatus();
+
+            } catch (error) {
+                loading.style.display = 'none';
+                btn.disabled = false;
+                result.className = 'result error';
+                result.style.display = 'block';
+                resultContent.textContent = '错误：' + error.message;
+
+                if (error.message.includes('Failed to fetch')) {
+                    resultContent.textContent = '连接失败：无法连接到后端服务\n\n请确保后端服务已启动：\n1. 打开终端\n2. cd backend\n3. python3 app.py';
+                }
+            }
+        }
+
+        async function pollTaskStatus() {
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            const resultContent = document.getElementById('resultContent');
+            const btn = document.getElementById('generateBtn');
+
+            try {
+                // 查询任务状态
+                const statusResponse = await fetch(`${BACKEND_API_URL}/${currentTaskId}`);
+                const task = await statusResponse.json();
+
+                if (!statusResponse.ok) {
+                    throw new Error(task.error || '查询任务失败');
+                }
+
+                // 更新进度
+                const elapsed = Date.now() - startTime;
+                const elapsedMinutes = (elapsed / 1000 / 60).toFixed(1);
+                document.getElementById('taskDuration').textContent = elapsedMinutes + ' 分钟';
+
+                // 根据状态更新UI
+                switch (task.status) {
+                    case 'pending':
+                        updateProgress('pending', '任务等待中...', 20);
+                        break;
+                    case 'running':
+                        updateProgress('running', '任务执行中...', 50);
+                        break;
+                    case 'completed':
+                        updateProgress('completed', '任务完成！', 100);
+                        clearInterval(pollTimer);
+                        pollTimer = null;
+
+                        // 显示结果
+                        loading.style.display = 'none';
+                        btn.disabled = false;
+                        result.className = 'result success';
+                        result.style.display = 'block';
+                        resultContent.textContent = JSON.stringify(task.result, null, 2);
+                        return;
+                    case 'failed':
+                        updateProgress('failed', '任务失败！', 100);
+                        clearInterval(pollTimer);
+                        pollTimer = null;
+
+                        // 显示错误
+                        loading.style.display = 'none';
+                        btn.disabled = false;
+                        result.className = 'result error';
+                        result.style.display = 'block';
+                        resultContent.textContent = '任务失败：' + (task.error || '未知错误');
+                        alert('任务失败！\n\n' + (task.error || '未知错误'));
+                        return;
+                }
+
+                // 检查超时
+                if (elapsed > MAX_POLL_TIME) {
+                    clearInterval(pollTimer);
+                    pollTimer = null;
+                    throw new Error('任务执行超时（超过20分钟）');
+                }
+
+            } catch (error) {
+                clearInterval(pollTimer);
+                pollTimer = null;
+
+                loading.style.display = 'none';
+                btn.disabled = false;
+                result.className = 'result error';
+                result.style.display = 'block';
+                resultContent.textContent = '错误：' + error.message;
+
+                if (error.message.includes('Failed to fetch')) {
+                    resultContent.textContent = '连接失败：无法连接到后端服务\n\n请确保后端服务正在运行。';
+                }
+            }
+        }
+
+        function updateProgress(status, text, progress) {
+            const progressBar = document.getElementById('progressBar');
+            const statusText = document.getElementById('statusText');
+            const statusIcon = document.getElementById('statusIcon');
+            const taskStatus = document.getElementById('taskStatus');
+
+            progressBar.style.width = progress + '%';
+            statusText.textContent = text;
+            taskStatus.textContent = status;
+
+            const icons = {
+                'pending': '⏳',
+                'running': '🔄',
+                'completed': '✅',
+                'failed': '❌'
+            };
+            statusIcon.textContent = icons[status] || '⏳';
+        }
+
+        // 页面加载时启动轮询
+        document.addEventListener('DOMContentLoaded', () => {
+            pollTimer = setInterval(() => {
+                if (currentTaskId && !document.getElementById('result').style.display) {
+                    pollTaskStatus();
+                }
+            }, POLL_INTERVAL);
+        });
+    </script>
+</body>
+</html>

@@ -81,12 +81,12 @@ PORT=5000
 
 修改前端页面的API地址：
 
-**index_async.html:**
+**index.html（异步版本，推荐）:**
 ```javascript
 const BACKEND_API_URL = 'https://ai-storyboard-api.onrender.com/api/v1/tasks';
 ```
 
-**index_new.html:**
+**index_new.html（同步版本，备用）:**
 ```javascript
 const BACKEND_API_URL = 'https://ai-storyboard-api.onrender.com/run';
 ```
