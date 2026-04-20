@@ -201,6 +201,76 @@ curl -X POST http://localhost:5000/run \
 
 ## 🌐 云端部署
 
+### 方式1：本地运行（开发）
+
+一键启动：
+```bash
+cd backend && python3 app.py
+```
+
+### 方式2：线上部署（推荐）
+
+#### ✅ 代码已推送到GitHub
+
+- 仓库地址：https://github.com/Electricity-cub/Electricity-cub-ai-storyboard-workflow
+- 分支：main
+- 提交：9个本地提交已推送
+
+#### 🚀 快速部署到Render（免费）
+
+**步骤：**
+
+1. **访问 Render**
+   - 打开：https://render.com
+   - 使用GitHub账号登录
+
+2. **创建Web服务**
+   - 点击 "New +" → "Web Service"
+   - 连接 `Electricity-cub-ai-storyboard-workflow` 仓库
+   - 点击 "Connect"
+
+3. **配置服务**
+   - Name: `ai-storyboard-api`
+   - Region: Singapore（推荐，国内访问快）
+   - Build Command: `pip install -r requirements.txt`
+   - Start Command: `cd backend && python3 app.py`
+
+4. **配置环境变量（重要）**
+
+   点击 "Advanced" → "Add Environment Variable"，添加：
+
+   ```bash
+   COZE_API_URL=https://3b7j5mjhsz.coze.site/run
+   COZE_API_TOKEN=你的Coze_API_Token
+   PORT=5000
+   ```
+
+5. **部署**
+   - 点击 "Create Web Service"
+   - 等待2-3分钟部署完成
+
+6. **获取服务地址**
+
+   部署成功后，你会看到：
+   - 服务地址：`https://ai-storyboard-api.onrender.com`
+   - 健康检查：`https://ai-storyboard-api.onrender.com/health`
+
+7. **更新前端API地址**
+
+   修改前端文件中的API地址：
+
+   **index_async.html:**
+   ```javascript
+   const BACKEND_API_URL = 'https://ai-storyboard-api.onrender.com/api/v1/tasks';
+   ```
+
+   **index_new.html:**
+   ```javascript
+   const BACKEND_API_URL = 'https://ai-storyboard-api.onrender.com/run';
+   ```
+
+**详细部署指南：** [DEPLOY_ONLINE.md](DEPLOY_ONLINE.md)
+
 ### 推荐使用方式
 
 **方式1：异步版本（推荐，无超时问题）**

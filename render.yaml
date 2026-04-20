@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: ai-storyboard-api
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: cd backend && python3 app.py
+    envVars:
+      - key: COZE_API_URL
+        value: https://3b7j5mjhsz.coze.site/run
+      - key: COZE_API_TOKEN
+        sync: false
+      - key: PORT
+        value: 5000
